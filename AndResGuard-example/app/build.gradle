@@ -1,0 +1,129 @@
+apply plugin: 'com.android.application'
+apply plugin: 'AndResGuard'
+apply plugin: 'io.fabric'
+
+buildscript {
+    repositories {
+        jcenter()
+        maven { url 'https://maven.fabric.io/public' }
+    }
+    dependencies {
+        // The Fabric Gradle plugin uses an open ended version to react
+        // quickly to Android tooling updates
+        classpath 'io.fabric.tools:gradle:latest.integration'
+    }
+}
+
+andResGuard {
+    mappingFile = file("./resource_mapping.txt")
+    use7zip = true
+    useSign = true
+    keepRoot = false
+    // add <yourpackagename>.R.drawable.icon into whitelist.
+    // because the launcher will get the icon with his name
+    whiteList = [
+            "R.mipmap.ic_launcher",
+            //https://docs.fabric.io/android/crashlytics/build-tools.html
+            "R.string.com.crashlytics.*"
+    ]
+    compressFilePattern = [
+            "*.png",
+            "*.jpg",
+            "*.jpeg",
+            "*.gif",
+            "resources.arsc"
+    ]
+    sevenzip {
+        artifact = 'com.tencent.mm:SevenZip:1.1.9'
+        //path = "/usr/local/bin/7za"
+    }
+}
+
+repositories {
+    jcenter()
+    maven { url 'https://maven.fabric.io/public' }
+}
+
+crashlytics {
+    enableNdk true
+    androidNdkOut 'src/main/obj'
+    androidNdkLibsOut 'src/main/libs'
+}
+
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion "24.0.0"
+
+
+    signingConfigs {
+        release {
+            try {
+                storeFile file("../keystore/release.keystore")
+                storePassword "testres"
+                keyAlias "testres"
+                keyPassword "testres"
+            } catch (ex) {
+                throw new InvalidUserDataException(ex.toString())
+            }
+        }
+
+        debug {
+            storeFile file("../keystore/debug.keystore")
+        }
+    }
+
+//    productFlavors {
+//        flavor2 {
+//            println("@@@THIS IS FLAVOR2@@@")
+//            applicationId 'andresguard.tencent.com.andresguard_example.flavor2'
+//        }
+//
+//        flavor1 {
+//            println("@@@THIS IS FLAVOR1@@@")
+//            applicationId 'andresguard.tencent.com.andresguard_example.flavor1'
+//        }
+//
+//        aaa {
+//            println("@@@THIS IS aaa@@@")
+//            applicationId 'andresguard.tencent.com.andresguard_example.aaa'
+//        }
+//    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            shrinkResources true
+            zipAlignEnabled true
+            pseudoLocalesEnabled true
+            signingConfig signingConfigs.release
+        }
+    }
+
+
+    defaultConfig {
+        applicationId "andresguard.tencent.com.andresguard_example"
+        minSdkVersion 14
+        targetSdkVersion 24
+        versionCode 2
+        versionName "1.1"
+    }
+}
+
+
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:24.0.0'
+    compile 'com.android.support:design:24.0.0'
+    // Crashlytics Kit
+    compile('com.crashlytics.sdk.android:crashlytics:2.5.5@aar') {
+        transitive = true
+    }
+    // NDK Kit
+    compile('com.crashlytics.sdk.android:crashlytics-ndk:1.1.2@aar') {
+        transitive = true
+    }
+}
